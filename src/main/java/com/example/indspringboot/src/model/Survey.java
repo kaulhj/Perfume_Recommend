@@ -15,17 +15,17 @@ public class Survey {
     private int gender;
     private int time;
     private int scent;
-    private int price;
+    private int season;
     private int resultId1;
     private int resultId2;
     private int resultId3;
 
     @Builder(builderMethodName = "SurveyBuilder")
-    public Survey(int gender, int time, int scent, int price, int resultId1, int resultId2, int resultId3) {
+    public Survey(int gender, int time, int scent, int season, int resultId1, int resultId2, int resultId3) {
         this.gender = gender;
         this.time = time;
         this.scent = scent;
-        this.price = price;
+        this.season = season;
         this.resultId1 = resultId1;
         this.resultId2 = resultId2;
         this.resultId3 = resultId3;

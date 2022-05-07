@@ -53,13 +53,13 @@ public class ReService {
         }
     }
 
-    public String pushPrice(int priceRangeNum)throws Exception{
+    public String pushSeason(int seasonId)throws Exception{
         try{
             //해당 값까지 4개로 걸러서 데이터가 있는지 확인
             //없으면 성별 / 밤낮/ 향기 중에서 하나 제외
 
 
-            String result = dao.pushPrice(priceRangeNum);
+            String result = dao.pushSeason(seasonId);
             return result;
         }catch (Exception exception){
             exception.printStackTrace();

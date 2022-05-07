@@ -69,15 +69,15 @@ public class Dao {
 
 
     @Transactional(rollbackFor = Exception.class)
-    public String pushPrice(int priceRangeNum) {
+    public String pushSeason(int seasonId) {
         String lastId = "select surveyId from survey order by surveyId\n" +
                 "desc limit 1";
         int insertId = this.jdbcTemplate.queryForObject(lastId, int.class);
-        String pushPriceQuery = "update survey set priceRangeId = ? where surveyId = ?";
-        Object[] pushPriceParams = new Object[]{priceRangeNum, insertId};
+        String pushPriceQuery = "update survey set seasonId = ? where surveyId = ?";
+        Object[] pushPriceParams = new Object[]{seasonId, insertId};
         this.jdbcTemplate.update(pushPriceQuery, pushPriceParams);
 
-        String dataQuery = "select genderId,spendTimeId,scentId,priceRangeId\n" +
+        String dataQuery = "select genderId,spendTimeId,scentId,seasonId\n" +
                 "from survey\n" +
                 "where surveyId = ?";
         Survey dataList = this.jdbcTemplate.queryForObject(dataQuery,
@@ -85,29 +85,29 @@ public class Dao {
                         .gender(rs.getInt("genderId"))
                         .time(rs.getInt("spendTimeId"))
                         .scent(rs.getInt("scentId"))
-                        .price(rs.getInt("priceRangeId"))
+                        .season(rs.getInt("seasonId"))
                         .build()
                 , insertId);
 
         String filterInsertQuery = "update survey set resultId1 = (select perfumeId\n" +
                 "from perfumeDataCopy\n" +
                 "where (genderId = ? or genderId = 3) and spendTimeId = ? and\n" +
-                "      scentId = ? and priceRangeId = ?\n" +
-                "order by item_rating desc limit 1 offset 0),\n" +
+                "      scentId = ? and seasonId = ?\n" +
+                "order by rating desc limit 1 offset 0),\n" +
                 "                  resultId2 = (select perfumeId\n" +
                 "from perfumeDataCopy\n" +
                 "where (genderId = ? or genderId = 3) and spendTimeId = ? and\n" +
-                "      scentId = ? and priceRangeId = ?\n" +
-                "order by item_rating desc limit 1 offset 1),\n" +
+                "      scentId = ? and seasonId = ?\n" +
+                "order by rating desc limit 1 offset 1),\n" +
                 "                  resultId3 = (select perfumeId\n" +
                 "from perfumeDataCopy\n" +
                 "where (genderId = ? or genderId = 3) and spendTimeId = ? and\n" +
-                "      scentId = ? and priceRangeId = ?\n" +
-                "order by item_rating desc limit 1 offset 2)\n" +
+                "      scentId = ? and seasonId = ?\n" +
+                "order by rating desc limit 1 offset 2)\n" +
                 "where surveyId = ?\n";
-        Object[] filters = new Object[]{dataList.getGender(), dataList.getTime(), dataList.getScent(), dataList.getPrice(),
-                dataList.getGender(), dataList.getTime(), dataList.getScent(), dataList.getPrice(),
-                dataList.getGender(), dataList.getTime(), dataList.getScent(), dataList.getPrice(),
+        Object[] filters = new Object[]{dataList.getGender(), dataList.getTime(), dataList.getScent(), dataList.getSeason(),
+                dataList.getGender(), dataList.getTime(), dataList.getScent(), dataList.getSeason(),
+                dataList.getGender(), dataList.getTime(), dataList.getScent(), dataList.getSeason(),
                 insertId};
         this.jdbcTemplate.update(filterInsertQuery, filters);
 
@@ -118,7 +118,7 @@ public class Dao {
 
         String insertResultQuery = "insert Into algorithmResult( surveyId, rankByRating, perfumeId,standard)\n" +
                 " values (?, ? ,?,?)";
-        Object[] insertResultParams = new Object[]{insertId, 1, firstPerfumeId, "base_note"};
+        Object[] insertResultParams = new Object[]{insertId, 1, firstPerfumeId, "mainAccords"};
 
 
         this.jdbcTemplate.update(insertResultQuery, insertResultParams);
@@ -141,48 +141,24 @@ public class Dao {
                 "where surveyId = ?";
 
 
-        List<Integer> Ids = new ArrayList<>();
-        List<String> names = new ArrayList<>();
-        List<String> imagePaths = new ArrayList<>();
-        List<String> imageUrls = new ArrayList<>();
-        if (standardNum == 1) {
-            for (int i = 0; i < 3; i++) {
-
-                List<Integer> counts = new ArrayList<>(Arrays.asList(0, 1, 2));
-
-                Ids.add(this.jdbcTemplate.queryForObject("SELECT a.perfumeId\n" +
-                        "FROM algorithmResult a \n" +
-                        "inner join\n" +
-                        "    perfumeDataCopy pDC on a.perfumeId = pDC.perfumeId\n" +
-                        "WHERE surveyId = ? and standard = 'base_note' \n" +
-                        "ORDER BY pDC.item_rating limit 1 offset ?", int.class, insertId, counts.get(i))
-                );
-                names.add(this.jdbcTemplate.queryForObject("select name\n" +
-                        "from algorithmResult\n" +
-                        "inner join\n" +
-                        "    perfumeDataCopy pDC on algorithmResult.perfumeId = pDC.perfumeId\n" +
-                        "where surveyId = ? and standard = 'base_note'\n" +
-                        "ORDER BY pDC.item_rating limit 1 offset ?", String.class, insertId, counts.get(i)));
-                imagePaths.add(new String("perfume/" + Ids.get(i) + " " + names.get(i) + ".jpg"));
-                imageUrls.add(s3UploadService.getThumbnailPath(imagePaths.get(i)));
-
-            }
 
 
+        if(standardNum == 1){
             String getInfoQuery = "select\n" +
                     "\n" +
-                    "                       pc.perfumeId,name,brand,new_price,ml,concentration,g.genderStatus,\n" +
-                    "                       s.scentName,base_note,middle_note,item_rating,seller\n" +
-                    "                from perfumeDataCopy pc\n" +
-                    "                    left join gender g on pc.genderId = g.genderId\n" +
-                    "                left join scents s on pc.scentId = s.scentIdx\n" +
-                    "                left join spendTime sT on pc.spendTimeId = sT.spendTimeId\n" +
-                    "                #left join algorithmResult a on pc.perfumeId = a.perfumeId\n" +
-                    "                inner join(select perfumeId, aR.standard\n" +
-                    "                from survey\n" +
-                    "                inner join algorithmResult aR on survey.surveyId = aR.surveyId\n" +
-                    "                where aR.surveyId = ? and standard = 'base_note') li on pc.perfumeId = li.perfumeId\n" +
-                    "                order by item_rating";
+                    "                                           name,g.genderStatus,\n" +
+                    "                                           s.scentName,baseNote,middleNote,topNote,season,mainAccords,\n" +
+                    "       buyUrl,sillage,imageUrl,longevityRating\n" +
+                    "                                from perfumeDataCopy pc\n" +
+                    "                                        left join gender g on pc.genderId = g.genderId\n" +
+                    "                                    left join scents s on pc.scentId = s.scentIdx\n" +
+                    "                                    left join spendTime sT on pc.spendTimeId = sT.spendTimeId\n" +
+                    "                                    left join season se on pc.seasonId = se.seasonId\n" +
+                    "                                    inner join(select perfumeId, aR.standard\n" +
+                    "                                    from survey\n" +
+                    "                                    inner join algorithmResult aR on survey.surveyId = aR.surveyId\n" +
+                    "                                    where aR.surveyId = ? and standard = 'mainAccords') li on pc.perfumeId = li.perfumeId\n" +
+                    "                                    order by rating;";
 
 
             //String imgSource = new String("perfume/")
@@ -191,112 +167,65 @@ public class Dao {
 
             return this.jdbcTemplate.query(getInfoQuery,
                     (rs, rowNum) -> GetRecommends.builder()
-                            .standard("base_note")
+                            .standard("mainAccords")
                             .number(rowNum + 1)
-                            .brand(rs.getString("brand"))
                             .name(rs.getString("name"))
-                            .price(rs.getDouble("new_price"))
-                            .ml(rs.getInt("ml"))
-                            .concentration(rs.getString("concentration"))
                             .gender(rs.getString("genderStatus"))
                             .scent(rs.getString("scentName"))
-                            .base_note(rs.getString("base_note"))
-                            .middle_note(rs.getString("middle_note"))
-                            .rating(rs.getDouble("item_rating"))
-                            .seller(rs.getString("seller"))
-                            .imgUrl(imageUrls.get(rowNum))
+                            .baseNote(rs.getString("baseNote"))
+                            .middleNote(rs.getString("middleNote"))
+                            .topNote(rs.getString("topNote"))
+                            .season(rs.getString("season"))
+                            .mainAccords(rs.getString("mainAccords"))
+                            .buyUrl(rs.getString("buyUrl"))
+                            .sillage(rs.getString("sillage"))
+                            .longevityRating(rs.getString("longevityRating"))
+                            .imageUrl(rs.getString("imageUrl"))
                             .build(),
                     insertId);
         } else if (standardNum == 2) {
-            for (int i = 0; i < 2; i++) {
-
-                List<Integer> counts = new ArrayList<>(Arrays.asList(0, 1, 2));
-
-                Ids.add(this.jdbcTemplate.queryForObject("SELECT a.perfumeId\n" +
-                        "FROM algorithmResult a \n" +
-                        "inner join\n" +
-                        "    perfumeDataCopy pDC on a.perfumeId = pDC.perfumeId\n" +
-                        "WHERE surveyId = ? and standard = 'middle_note' \n" +
-                        "ORDER BY pDC.item_rating limit 1 offset ?", int.class, insertId, counts.get(i))
-                );
-                names.add(this.jdbcTemplate.queryForObject("select name\n" +
-                        "from algorithmResult\n" +
-                        "inner join\n" +
-                        "    perfumeDataCopy pDC on algorithmResult.perfumeId = pDC.perfumeId\n" +
-                        "where surveyId = ? and standard = 'middle_note'\n" +
-                        "ORDER BY pDC.item_rating limit 1 offset ?", String.class, insertId, counts.get(i)));
-                imagePaths.add(new String("perfume/" + Ids.get(i) + " " + names.get(i) + ".jpg"));
-                imageUrls.add(s3UploadService.getThumbnailPath(imagePaths.get(i)));
-
-            }
-
-
             String getInfoQuery = "select\n" +
                     "\n" +
-                    "                       pc.perfumeId,name,brand,new_price,ml,concentration,g.genderStatus,\n" +
-                    "                       s.scentName,base_note,middle_note,item_rating,seller\n" +
-                    "                from perfumeDataCopy pc\n" +
-                    "                    left join gender g on pc.genderId = g.genderId\n" +
-                    "                left join scents s on pc.scentId = s.scentIdx\n" +
-                    "                left join spendTime sT on pc.spendTimeId = sT.spendTimeId\n" +
-                    "                #left join algorithmResult a on pc.perfumeId = a.perfumeId\n" +
-                    "                inner join(select perfumeId, aR.standard\n" +
-                    "                from survey\n" +
-                    "                inner join algorithmResult aR on survey.surveyId = aR.surveyId\n" +
-                    "                where aR.surveyId = ? and standard = 'middle_note') li on pc.perfumeId = li.perfumeId\n" +
-                    "                order by item_rating";
-
-
-            //String imgSource = new String("perfume/")
-            //imgName.get(0).get("perfumeId");
-            String imgPath = s3UploadService.getThumbnailPath(".jpg");
+                    "                                           name,g.genderStatus,\n" +
+                    "                                           s.scentName,baseNote,middleNote,topNote,season,mainAccords,\n" +
+                    "       buyUrl,sillage,imageUrl,longevityRating\n" +
+                    "                                from perfumeDataCopy pc\n" +
+                    "                                        left join gender g on pc.genderId = g.genderId\n" +
+                    "                                    left join scents s on pc.scentId = s.scentIdx\n" +
+                    "                                    left join spendTime sT on pc.spendTimeId = sT.spendTimeId\n" +
+                    "                                    left join season se on pc.seasonId = se.seasonId\n" +
+                    "                                    inner join(select perfumeId, aR.standard\n" +
+                    "                                    from survey\n" +
+                    "                                    inner join algorithmResult aR on survey.surveyId = aR.surveyId\n" +
+                    "                                    where aR.surveyId = ? and standard = 'mainAccords') li on pc.perfumeId = li.perfumeId\n" +
+                    "                                    order by rating;";
 
             return this.jdbcTemplate.query(getInfoQuery,
                     (rs, rowNum) -> GetRecommends.builder()
-                            .standard("middle_note")
+                            .standard("baseNote")
                             .number(rowNum + 1)
                             .name(rs.getString("name"))
-                            .imgUrl(imageUrls.get(rowNum))
+                            .imageUrl(rs.getString("imageUrl"))
                             .build(),
                     insertId);
         }else if (standardNum == 3) {
-            for (int i = 0; i < 2; i++) {
-
-                List<Integer> counts = new ArrayList<>(Arrays.asList(0, 1, 2));
-
-                Ids.add(this.jdbcTemplate.queryForObject("SELECT a.perfumeId\n" +
-                        "FROM algorithmResult a \n" +
-                        "inner join\n" +
-                        "    perfumeDataCopy pDC on a.perfumeId = pDC.perfumeId\n" +
-                        "WHERE surveyId = ? and standard = 'middle_note' \n" +
-                        "ORDER BY pDC.item_rating limit 1 offset ?", int.class, insertId, counts.get(i))
-                );
-                names.add(this.jdbcTemplate.queryForObject("select name\n" +
-                        "from algorithmResult\n" +
-                        "inner join\n" +
-                        "    perfumeDataCopy pDC on algorithmResult.perfumeId = pDC.perfumeId\n" +
-                        "where surveyId = ? and standard = 'middle_note'\n" +
-                        "ORDER BY pDC.item_rating limit 1 offset ?", String.class, insertId, counts.get(i)));
-                imagePaths.add(new String("perfume/" + Ids.get(i) + " " + names.get(i) + ".jpg"));
-                imageUrls.add(s3UploadService.getThumbnailPath(imagePaths.get(i)));
-
-            }
 
 
             String getInfoQuery = "select\n" +
                     "\n" +
-                    "                       pc.perfumeId,name,brand,new_price,ml,concentration,g.genderStatus,\n" +
-                    "                       s.scentName,base_note,middle_note,item_rating,seller\n" +
-                    "                from perfumeDataCopy pc\n" +
-                    "                    left join gender g on pc.genderId = g.genderId\n" +
-                    "                left join scents s on pc.scentId = s.scentIdx\n" +
-                    "                left join spendTime sT on pc.spendTimeId = sT.spendTimeId\n" +
-                    "                #left join algorithmResult a on pc.perfumeId = a.perfumeId\n" +
-                    "                inner join(select perfumeId, aR.standard\n" +
-                    "                from survey\n" +
-                    "                inner join algorithmResult aR on survey.surveyId = aR.surveyId\n" +
-                    "                where aR.surveyId = ? and standard = 'middle_note') li on pc.perfumeId = li.perfumeId\n" +
-                    "                order by item_rating";
+                    "                                           name,g.genderStatus,\n" +
+                    "                                           s.scentName,baseNote,middleNote,topNote,season,mainAccords,\n" +
+                    "       buyUrl,sillage,imageUrl,longevityRating\n" +
+                    "                                from perfumeDataCopy pc\n" +
+                    "                                        left join gender g on pc.genderId = g.genderId\n" +
+                    "                                    left join scents s on pc.scentId = s.scentIdx\n" +
+                    "                                    left join spendTime sT on pc.spendTimeId = sT.spendTimeId\n" +
+                    "                                    left join season se on pc.seasonId = se.seasonId\n" +
+                    "                                    inner join(select perfumeId, aR.standard\n" +
+                    "                                    from survey\n" +
+                    "                                    inner join algorithmResult aR on survey.surveyId = aR.surveyId\n" +
+                    "                                    where aR.surveyId = ? and standard = 'baseNote') li on pc.perfumeId = li.perfumeId\n" +
+                    "                                    order by rating";
 
 
             //String imgSource = new String("perfume/")
@@ -305,20 +234,20 @@ public class Dao {
 
             return this.jdbcTemplate.query(getInfoQuery,
                     (rs, rowNum) -> GetRecommends.builder()
-                            .standard("middle_note")
+                            .standard("baseNote")
                             .number(rowNum + 1)
-                            .brand(rs.getString("brand"))
                             .name(rs.getString("name"))
-                            .price(rs.getDouble("new_price"))
-                            .ml(rs.getInt("ml"))
-                            .concentration(rs.getString("concentration"))
                             .gender(rs.getString("genderStatus"))
                             .scent(rs.getString("scentName"))
-                            .base_note(rs.getString("base_note"))
-                            .middle_note(rs.getString("middle_note"))
-                            .rating(rs.getDouble("item_rating"))
-                            .seller(rs.getString("seller"))
-                            .imgUrl(imageUrls.get(rowNum))
+                            .baseNote(rs.getString("baseNote"))
+                            .middleNote(rs.getString("middleNote"))
+                            .topNote(rs.getString("topNote"))
+                            .season(rs.getString("season"))
+                            .mainAccords(rs.getString("mainAccords"))
+                            .buyUrl(rs.getString("buyUrl"))
+                            .sillage(rs.getString("sillage"))
+                            .longevityRating(rs.getString("longevityRating"))
+                            .imageUrl(rs.getString("imageUrl"))
                             .build(),
                     insertId);
         }
