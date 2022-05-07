@@ -197,7 +197,7 @@ public class Dao {
                     "                                    inner join(select perfumeId, aR.standard\n" +
                     "                                    from survey\n" +
                     "                                    inner join algorithmResult aR on survey.surveyId = aR.surveyId\n" +
-                    "                                    where aR.surveyId = ? and standard = 'mainAccords') li on pc.perfumeId = li.perfumeId\n" +
+                    "                                    where aR.surveyId = ? and standard = 'baseNote') li on pc.perfumeId = li.perfumeId\n" +
                     "                                    order by rating;";
 
             return this.jdbcTemplate.query(getInfoQuery,
