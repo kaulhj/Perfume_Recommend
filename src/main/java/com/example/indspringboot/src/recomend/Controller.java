@@ -60,10 +60,10 @@ public class Controller {
         }
     }
 
-    @PatchMapping("/pushPrice")
-    public String pushPrice(@RequestParam(value = "priceRange",required = true) Integer priceRangeNum){
+    @PatchMapping("/pushSeason")
+    public String pushSeason(@RequestParam(value = "seasonId",required = true) Integer seasonId){
         try{
-            String result = reService.pushPrice(priceRangeNum);
+            String result = reService.pushSeason(seasonId);
             return result;
         }catch (Exception exception){
             exception.printStackTrace();
