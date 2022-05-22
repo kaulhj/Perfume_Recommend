@@ -10,12 +10,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@RestController
+
 
 
 @RequestMapping("")
 
-
+@CrossOrigin(origins = "*")
+@RestController
 public class Controller {
     final Logger logger = LoggerFactory.getLogger(this.getClass());
 
@@ -34,7 +35,7 @@ public class Controller {
 
 
     @ResponseBody
-    @CrossOrigin(origins = "http://localhost:3000")
+
     @PostMapping("/pushGender")
     public String pushFilter(@RequestParam(value = "gender") int genderNum){
         try{
