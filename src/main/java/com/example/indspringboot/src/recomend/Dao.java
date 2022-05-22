@@ -253,8 +253,12 @@ public class Dao {
         }
         return new ArrayList<>();
     }
+
     @Transactional(rollbackFor = Exception.class)
     public String rate(int rating){
+
+
+
 
        return new String();
     }
