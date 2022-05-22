@@ -12,6 +12,7 @@ import java.util.List;
 
 @RestController
 
+
 @RequestMapping("")
 
 
@@ -33,6 +34,7 @@ public class Controller {
 
 
     @ResponseBody
+    @CrossOrigin(origins = "http://localhost:3000")
     @PostMapping("/pushGender")
     public String pushFilter(@RequestParam(value = "gender") int genderNum){
         try{
@@ -42,6 +44,7 @@ public class Controller {
             return new String(exception.getMessage());
         }
     }
+
 
     @PatchMapping("/pushTimeScent")
     public String pushTimeScent(@RequestParam(value = "time",required = false) Integer timeNum,
@@ -59,6 +62,7 @@ public class Controller {
             return new String(exception.getMessage());
         }
     }
+
 
     @PatchMapping("/pushSeason")
     public String pushSeason(@RequestParam(value = "seasonId",required = true) Integer seasonId){
@@ -86,6 +90,17 @@ public class Controller {
 
     }
 
+    //평점갱신
+    @PatchMapping("/rating")
+    public String rate(@RequestParam(value = "rating", required = true) int rating){
+        try{
+            String result = reService.rate(rating);
+            return result;
+        }catch (Exception exception){
+            exception.printStackTrace();
+            return new String();
+        }
+    }
 
 
 
