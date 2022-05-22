@@ -35,7 +35,7 @@ public class Controller {
 
 
     @ResponseBody
-
+    @CrossOrigin(origins = "*")
     @PostMapping("/pushGender")
     public String pushFilter(@RequestParam(value = "gender") int genderNum){
         try{
@@ -46,7 +46,7 @@ public class Controller {
         }
     }
 
-
+    @CrossOrigin(origins = "*")
     @PatchMapping("/pushTimeScent")
     public String pushTimeScent(@RequestParam(value = "time",required = false) Integer timeNum,
                                 @RequestParam(value = "scent",required = false) Integer scentNum){
@@ -64,7 +64,7 @@ public class Controller {
         }
     }
 
-
+    @CrossOrigin(origins = "*")
     @PatchMapping("/pushSeason")
     public String pushSeason(@RequestParam(value = "seasonId",required = true) Integer seasonId){
         try{
@@ -77,7 +77,7 @@ public class Controller {
     }
 
 
-        //필터링, 1,2,3케이스 추가
+    @CrossOrigin(origins = "*")     //필터링, 1,2,3케이스 추가
     @GetMapping("/filtering")
     public List<GetRecommends> filter(@RequestParam(value = "standard",required = true) Integer standardNum){
         try{
@@ -91,7 +91,7 @@ public class Controller {
 
     }
 
-    //평점갱신
+    @CrossOrigin(origins = "*")    //평점갱신
     @PatchMapping("/rating")
     public String rate(@RequestParam(value = "rating", required = true) int rating){
         try{
