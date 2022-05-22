@@ -26,6 +26,7 @@ public class ReService {
 
     public String pushGender(int genderNum) throws Exception{
         try{
+
             String result2 = dao.pushGender(genderNum);
             return result2;
         }catch (Exception exception){
@@ -45,7 +46,8 @@ public class ReService {
 
     public String pushScent(int scentNum)throws Exception{
         try{
-            String result3 = dao.pushScent(scentNum);
+            String result3=null;
+                result3 = dao.pushScent(scentNum);
             return result3;
         }catch (Exception exception){
             exception.printStackTrace();
@@ -64,6 +66,16 @@ public class ReService {
         }catch (Exception exception){
             exception.printStackTrace();
             return new String("선호 가격 입력에 실패했습니다.");
+        }
+    }
+
+    public String rate(int rating)throws Exception{
+        try{
+            String result = dao.rate(rating);
+            return result;
+        }catch (Exception exception){
+            exception.printStackTrace();
+            return new String("평점갱신을 실패했습니다.");
         }
     }
 }

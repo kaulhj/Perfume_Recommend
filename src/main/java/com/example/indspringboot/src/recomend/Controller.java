@@ -86,6 +86,18 @@ public class Controller {
 
     }
 
+    //평점갱신
+    @PatchMapping("/rating")
+    public String rate(@RequestParam(value = "rating", required = true) int rating){
+        try{
+            String result = reService.rate(rating);
+            return result;
+        }catch (Exception exception){
+            exception.printStackTrace();
+            return new String();
+        }
+    }
+
 
 
 
