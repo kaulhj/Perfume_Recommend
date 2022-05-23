@@ -11,13 +11,22 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import org.w3c.dom.stylesheets.LinkStyle;
 import javax.sql.DataSource;
+import javax.xml.transform.Result;
 import java.beans.Transient;
 import java.lang.reflect.Array;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.*;
-
+import com.example.indspringboot.src.model.GetRecommends;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 @Repository
 
 
@@ -32,6 +41,7 @@ public class Dao {
     @Autowired
     private S3UploadService s3UploadService;
 
+    public Statement stmt = null;
 
     public String pushGender(int genderNum) {
 
@@ -253,13 +263,41 @@ public class Dao {
         }
         return new ArrayList<>();
     }
-
     @Transactional(rollbackFor = Exception.class)
-    public String rate(int rating){
+    public String rate(int rating) throws SQLException {
+       ResultSet rs = exeSQuery("SELECT perfumeId FROM algorithmResult 1 DESC limit 2, 5");
+       while(rs.next()){
+           int perfumeId = Integer.parseInt(rs.getString(1));
+           ResultSet copyrs = exeSQuery("SELECT 'rating', 'voters' FROM perfumeDataCopy WHERE 'perfumeid' = " + perfumeId);
+           copyrs.next();
 
-
-
-
-       return new String();
+           int dbrating = Integer.parseInt(copyrs.getString(1));
+           int dbvoters = Integer.parseInt(copyrs.getString(2));
+           dbrating = (dbrating * dbvoters + rating) / ++dbvoters;
+           exeUQuery("UPDATE perfumeDataCopy " +
+                   "SET 'voters' = " + dbvoters + ", 'rating' = " + dbrating +
+                   "WHERE perfumeId = " + perfumeId);
+       }
+       return new String("평점갱신이 정상적으로 이루어졌습니다.");
+       //everything is up to date
+        //hakjunis babo
+    }
+    public ResultSet exeSQuery(String query){
+        ResultSet resultSet = null;
+        try{
+            resultSet = stmt.executeQuery(query);
+        }catch (Exception e){
+            System.out.println("query has error");
+            e.printStackTrace();
+        }
+        return resultSet;
+    }
+    public void exeUQuery(String query){
+        try{
+            stmt.executeUpdate(query);
+        }catch(Exception e){
+            //log.error("쿼리에 에러남");
+            e.printStackTrace();
+        }
     }
 }
