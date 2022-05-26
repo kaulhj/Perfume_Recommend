@@ -4,6 +4,7 @@ import com.example.indspringboot.src.model.GetRecommends;
 import com.example.indspringboot.src.model.Survey;
 import com.example.indspringboot.src.s3.S3UploadService;
 import lombok.Builder;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -11,15 +12,24 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.RestController;
 import org.w3c.dom.stylesheets.LinkStyle;
 import javax.sql.DataSource;
+import javax.xml.transform.Result;
 import java.beans.Transient;
 import java.lang.reflect.Array;
+
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.*;
-
+import com.example.indspringboot.src.model.GetRecommends;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+import lombok.extern.slf4j.Slf4j;
 @Repository
 
+@Slf4j
 
 public class Dao {
     private JdbcTemplate jdbcTemplate;
@@ -32,6 +42,7 @@ public class Dao {
     @Autowired
     private S3UploadService s3UploadService;
 
+    public Statement stmt = null;
 
     public String pushGender(int genderNum) {
 
@@ -253,13 +264,56 @@ public class Dao {
         }
         return new ArrayList<>();
     }
-
     @Transactional(rollbackFor = Exception.class)
-    public String rate(int rating){
+    public String rate(int rating) throws SQLException {
+        ResultSet rs = exeSQuery("SELECT perfumeId FROM algorithmResult ORDER BY 1 DESC limit 2, 5");
+        while(rs.next()){
+            int perfumeId = Integer.parseInt(rs.getString(1));
+            ResultSet copyrs = exeSQuery("SELECT rating, voters FROM perfumeDataCopy WHERE perfumeId = " + perfumeId);
+            copyrs.next();
 
+            float dbrating = Float.parseFloat(copyrs.getString(1));
+            int dbvoters = Integer.parseInt(copyrs.getString(2));
 
-
-
-       return new String();
+            dbrating = (dbrating * dbvoters + rating) / ++dbvoters;
+            exeUQuery("UPDATE perfumeDataCopy " +
+                    "SET voters = " + dbvoters + ", rating = " + dbrating +
+                    "WHERE perfumeId = " + perfumeId);
+            String abcd = Integer.toString(dbvoters);
+            log.info(abcd);
+        }
+        return "평점갱신이 정상적으로 이루어졌습니다.";
+    }
+    public ResultSet exeSQuery(String query) throws SQLException {
+        ResultSet resultSet = null;
+        String url = "jdbc:mysql://industryproject1.co93amjj7liq.ap-northeast-2.rds.amazonaws.com/IndPro";
+        String user = "admin";
+        String passwd = "69383838";
+        Connection conn;
+        conn = DriverManager.getConnection(url, user, passwd);
+        stmt = conn.createStatement();
+        try{
+            resultSet = stmt.executeQuery(query);
+            log.info("디비 넣기 완료");
+        }catch (Exception e){
+            System.out.println("query has error");
+            e.printStackTrace();
+        }
+        return resultSet;
+    }
+    public void exeUQuery(String query) throws SQLException {
+        String url = "jdbc:mysql://industryproject1.co93amjj7liq.ap-northeast-2.rds.amazonaws.com/IndPro";
+        String user = "admin";
+        String passwd = "69383838";
+        Connection conn;
+        conn = DriverManager.getConnection(url, user, passwd);
+        stmt = conn.createStatement();
+        try{
+            stmt.executeUpdate(query);
+        }catch(Exception e){
+            //log.error("쿼리에 에러남");
+            e.printStackTrace();
+        }
     }
 }
+
