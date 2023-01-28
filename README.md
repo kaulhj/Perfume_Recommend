@@ -31,6 +31,11 @@ PM & Back-end **Developer**
     - AWS EC2, RDS, S3, Route53
 
 ---
+
+## WBS
+
+![image](https://user-images.githubusercontent.com/89002687/215259775-90ff128e-affd-43a1-9507-b90d65d55ed2.png)
+
 ![image](https://user-images.githubusercontent.com/89002687/215259579-626ba0c8-c029-4638-9dcf-2d2a3030b580.png)
 
 ![image](https://user-images.githubusercontent.com/89002687/215259615-33a70c46-5a16-42c8-84ea-4f82b3f9fcec.png)
